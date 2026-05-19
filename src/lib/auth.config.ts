@@ -1,8 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
 
+const isProd = process.env.NODE_ENV === "production";
+
 export const authConfig = {
   secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
+  trustHost: true,
+  useSecureCookies: isProd,
   pages: { signIn: "/login" },
   providers: [],
   callbacks: {
