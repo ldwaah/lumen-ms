@@ -22,3 +22,14 @@ export function formatDuration(minutes: number) {
 export function xpForScore(score: number) {
   return Math.round(20 + score * 0.8);
 }
+
+export function stripMarkdown(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s{0,3}(?:[-*]\s+|\d+\.\s+)/gm, "")
+    .replace(/`+/g, "")
+    .replace(/\n{3,}/g, "\n\n");
+}
