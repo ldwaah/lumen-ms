@@ -3,19 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Route,
+  Sun,
+  MessageCircle,
+  Activity,
   BookOpen,
-  BarChart3,
   Menu,
-  GraduationCap,
+  Users,
+  Calendar,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/learn", label: "Path", icon: Route },
-  { href: "/courses", label: "Courses", icon: BookOpen },
-  { href: "/progress", label: "Progress", icon: BarChart3 },
+  { href: "/today", label: "Today", icon: Sun },
+  { href: "/coach", label: "Coach", icon: MessageCircle },
+  { href: "/track", label: "Track", icon: Activity },
+  { href: "/programs", label: "Programs", icon: BookOpen },
   { href: "/profile", label: "More", icon: Menu },
+];
+
+const sideLinks = [
+  { href: "/today", label: "Today", icon: Sun },
+  { href: "/coach", label: "AI Coach", icon: MessageCircle },
+  { href: "/track", label: "Tracker", icon: Activity },
+  { href: "/programs", label: "Programs", icon: BookOpen },
+  { href: "/sessions", label: "Sessions", icon: Calendar },
+  { href: "/community", label: "Community", icon: Users },
+  { href: "/care-team", label: "Care team", icon: Heart },
+  { href: "/profile", label: "Profile", icon: Menu },
 ];
 
 export function BottomNav() {
@@ -35,6 +50,7 @@ export function BottomNav() {
                 "flex flex-1 flex-col items-center justify-center gap-1 py-3 text-xs transition-colors",
                 active ? "text-white" : "text-white/50",
               )}
+              aria-label={label}
             >
               <span
                 className={cn(
@@ -44,7 +60,6 @@ export function BottomNav() {
               >
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="sr-only">{label}</span>
             </Link>
           );
         })}
@@ -56,29 +71,20 @@ export function BottomNav() {
 export function SideNav() {
   const pathname = usePathname();
 
-  const links = [
-    { href: "/learn", label: "My Path", icon: Route },
-    { href: "/courses", label: "My Courses", icon: BookOpen },
-    { href: "/progress", label: "My Dashboard", icon: BarChart3 },
-    { href: "/profile", label: "Profile", icon: GraduationCap },
-  ];
-
   return (
     <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r border-[var(--border)] bg-[var(--card)] p-4 md:flex">
-      <Link href="/learn" className="mb-6 flex items-center gap-2 px-2">
+      <Link href="/today" className="mb-6 flex items-center gap-2 px-2">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e93d52] text-lg font-bold text-white">
           L
         </span>
         <div>
-          <p className="text-sm font-bold tracking-wide text-[#e93d52]">
-            LUMEN
-          </p>
+          <p className="text-sm font-bold tracking-wide text-[#e93d52]">LUMEN</p>
           <p className="text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">
-            Learn brighter
+            Navigate MS with clarity
           </p>
         </div>
       </Link>
-      {links.map(({ href, label, icon: Icon }) => {
+      {sideLinks.map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href || pathname.startsWith(`${href}/`);
         return (

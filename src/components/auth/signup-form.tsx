@@ -33,7 +33,7 @@ export function SignupForm() {
     }
 
     await signIn("credentials", { email, password, redirect: false });
-    router.push("/learn");
+    router.push("/onboarding");
     router.refresh();
   }
 

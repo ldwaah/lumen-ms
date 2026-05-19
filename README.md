@@ -1,14 +1,15 @@
-# Lumen — Learn brighter
+# Lumen — Navigate MS with clarity
 
-An adaptive learning platform inspired by modern micro-learning UX: bite-sized **nuggets**, instant quiz feedback, streaks, XP, and progress analytics.
+A hybrid MS coaching platform for people navigating multiple sclerosis: AI coach, symptom & wellness tracker, MS education programs, human coach sessions, and care-team sharing.
 
 ## Stack
 
 - **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS v4**
 - **Prisma 6** + **SQLite** (local dev; swap `DATABASE_URL` for Postgres in production)
 - **NextAuth (Auth.js v5)** — email/password credentials
-- **Framer Motion** — lesson & quiz transitions
-- **Recharts** — learning activity chart
+- **Vercel AI SDK** + OpenAI (optional; mock coach without API key)
+- **Recharts** — wellness trends
+- **pdf-lib** — care-team PDF export
 
 ## Quick start
 
@@ -26,7 +27,18 @@ Open [http://localhost:3000](http://localhost:3000)
 - **Email:** `alex@lumenlearn.app`
 - **Password:** `learn123`
 
-Or create a new account via **Sign up**.
+Or create a new account via **Sign up** (routes to onboarding).
+
+## Features (MVP)
+
+- **Onboarding** — MS type, diagnosis date, DMT, goals, accessibility prefs
+- **Today** (`/today`) — daily check-in, continue program, AI coach prompts
+- **AI Coach** (`/coach`) — chat with safety pipeline (crisis, emergency, medication guardrails)
+- **Tracker** (`/track`) — check-ins, symptoms, medications, relapses + trends chart
+- **Programs** (`/programs`) — First 90 Days, Fatigue Management (nugget engine)
+- **Care team** (`/care-team`) — members list + 30-day PDF export
+- **Sessions** (`/sessions`) — coach directory + Cal.com stubs (Phase 2)
+- **Community** (`/community`) — Phase 2 stub
 
 ## Scripts
 
@@ -35,20 +47,7 @@ Or create a new account via **Sign up**.
 | `npm run dev` | Start dev server |
 | `npm run build` | Production build |
 | `npm run db:setup` | Migrate DB + seed content |
-| `npm run db:seed` | Re-seed only |
 | `npm run typecheck` | TypeScript check |
-| `npm run lint` | ESLint |
-
-> **pnpm:** If you prefer pnpm, run `pnpm install` then `pnpm dev` — scripts are identical.
-
-## What's included
-
-- **Auth** — login & signup (Century-inspired cream card on dark pattern)
-- **My Path** (`/learn`) — greeting, continue learning, recommendations, streak/XP
-- **Courses** (`/courses`) — Maths & Biology → courses → nuggets (9 seed nuggets)
-- **Nugget player** — content + multiple-choice quiz with instant feedback
-- **Progress** (`/progress`) — activity chart, subject mastery, active-day calendar
-- **Profile** — account summary & sign out
 
 ## Environment
 
@@ -57,7 +56,8 @@ Copy `.env.example` to `.env` and set:
 - `DATABASE_URL` — default `file:./dev.db`
 - `AUTH_SECRET` — random string for session signing
 - `NEXTAUTH_URL` — `http://localhost:3000` in dev
+- `OPENAI_API_KEY` — optional; enables live AI coach
 
 ## License
 
-MIT — original content & branding only; not affiliated with CENTURY Tech.
+MIT — not affiliated with any MS charity or pharma company. Not medical advice.

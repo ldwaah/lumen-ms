@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/learn";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/today";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -49,7 +49,7 @@ export function LoginForm() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@school.edu"
+          placeholder="you@example.com"
           required
           className="border-gray-200 bg-white text-gray-900"
         />

@@ -8,18 +8,197 @@ datasource db {
 }
 
 model User {
-  id            String           @id @default(cuid())
-  name          String
-  email         String           @unique
-  passwordHash  String
-  xp            Int              @default(0)
-  currentStreak Int              @default(0)
-  longestStreak Int              @default(0)
-  lastActiveAt  DateTime?
-  mood          String           @default("neutral")
-  createdAt     DateTime         @default(now())
-  progress      NuggetProgress[]
-  activities    ActivityLog[]
+  id               String            @id @default(cuid())
+  name             String
+  email            String            @unique
+  passwordHash     String
+  xp               Int               @default(0)
+  currentStreak    Int               @default(0)
+  longestStreak    Int               @default(0)
+  lastActiveAt     DateTime?
+  mood             String            @default("neutral")
+  createdAt        DateTime          @default(now())
+  progress         NuggetProgress[]
+  activities       ActivityLog[]
+  msProfile        MSProfile?
+  checkIns         DailyCheckIn[]
+  symptomEvents    SymptomEvent[]
+  medications      Medication[]
+  relapseEvents    RelapseEvent[]
+  goals            Goal[]
+  chatThreads      ChatThread[]
+  coachingSessions CoachingSession[]
+  careTeamMembers  CareTeamMember[]
+  consentRecords   ConsentRecord[]
+}
+
+model MSProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  msType         String    @default("Unsure")
+  diagnosisDate  DateTime?
+  currentDMT     String?
+  goals          String    @default("[]")
+  lowEnergyMode  Boolean   @default(false)
+  largeText      Boolean   @default(false)
+  highContrast   Boolean   @default(false)
+  onboardingDone Boolean   @default(false)
+  consentFlags   String    @default("{}")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model DailyCheckIn {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime
+  energy     Int
+  mood       Int
+  pain       Int
+  brainFog   Int
+  sleepHours Float?
+  stress     Int?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model SymptomEvent {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  severity  Int
+  startedAt DateTime
+  endedAt   DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+}
+
+model Medication {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      String
+  dose      String?
+  schedule  String?
+  active    Boolean         @default(true)
+  logs      MedicationLog[]
+  createdAt DateTime        @default(now())
+}
+
+model MedicationLog {
+  id           String     @id @default(cuid())
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  takenAt      DateTime
+  notes        String?
+  createdAt    DateTime   @default(now())
+}
+
+model RelapseEvent {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt          DateTime
+  symptoms           String   @default("[]")
+  severity           Int
+  treatedWithSteroids Boolean @default(false)
+  clinicianNotes     String?
+  createdAt          DateTime @default(now())
+}
+
+model Goal {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  programId   String?
+  completed   Boolean   @default(false)
+  targetDate  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model ChatThread {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String        @default("Coach chat")
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  threadId  String
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  safetyFlag String?
+  createdAt DateTime   @default(now())
+}
+
+model Coach {
+  id             String              @id @default(cuid())
+  name           String
+  title          String
+  bio            String?
+  specialties    String              @default("[]")
+  calComUrl      String?
+  avatarUrl      String?
+  active         Boolean             @default(true)
+  availability   CoachAvailability[]
+  sessions       CoachingSession[]
+  createdAt      DateTime            @default(now())
+}
+
+model CoachAvailability {
+  id        String @id @default(cuid())
+  coachId   String
+  coach     Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+  startTime String
+  endTime   String
+}
+
+model CoachingSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coachId      String
+  coach        Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  scheduledAt  DateTime
+  status       String   @default("scheduled")
+  meetingUrl   String?
+  notes        String?
+  actionItems  String   @default("[]")
+  createdAt    DateTime @default(now())
+}
+
+model CareTeamMember {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  role        String
+  email       String?
+  permissions String   @default("view_summary")
+  createdAt   DateTime @default(now())
+}
+
+model ConsentRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature   String
+  granted   Boolean
+  createdAt DateTime @default(now())
 }
 
 model Subject {
@@ -56,14 +235,14 @@ model Nugget {
 }
 
 model Question {
-  id             String @id @default(cuid())
-  nuggetId       String
-  nugget         Nugget @relation(fields: [nuggetId], references: [id], onDelete: Cascade)
-  prompt         String
-  options        String
-  correctIndex   Int
-  explanation    String
-  sortOrder      Int    @default(0)
+  id           String @id @default(cuid())
+  nuggetId     String
+  nugget       Nugget @relation(fields: [nuggetId], references: [id], onDelete: Cascade)
+  prompt       String
+  options      String
+  correctIndex Int
+  explanation  String
+  sortOrder    Int    @default(0)
 }
 
 model NuggetProgress {
@@ -82,13 +261,13 @@ model NuggetProgress {
 }
 
 model ActivityLog {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date            DateTime
-  nuggetsCompleted Int     @default(0)
-  minutesStudied  Int      @default(0)
-  xpEarned        Int      @default(0)
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date             DateTime
+  nuggetsCompleted Int      @default(0)
+  minutesStudied   Int      @default(0)
+  xpEarned         Int      @default(0)
 
   @@unique([userId, date])
 }

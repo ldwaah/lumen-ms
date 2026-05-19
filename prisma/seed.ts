@@ -2,10 +2,23 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
-
 const DEMO_PASSWORD = "learn123";
 
 async function main() {
+  await prisma.consentRecord.deleteMany();
+  await prisma.careTeamMember.deleteMany();
+  await prisma.coachingSession.deleteMany();
+  await prisma.coachAvailability.deleteMany();
+  await prisma.coach.deleteMany();
+  await prisma.chatMessage.deleteMany();
+  await prisma.chatThread.deleteMany();
+  await prisma.goal.deleteMany();
+  await prisma.relapseEvent.deleteMany();
+  await prisma.medicationLog.deleteMany();
+  await prisma.medication.deleteMany();
+  await prisma.symptomEvent.deleteMany();
+  await prisma.dailyCheckIn.deleteMany();
+  await prisma.mSProfile.deleteMany();
   await prisma.activityLog.deleteMany();
   await prisma.nuggetProgress.deleteMany();
   await prisma.question.deleteMany();
@@ -16,317 +29,299 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name: "Alex Morgan",
       email: "alex@lumenlearn.app",
       passwordHash,
-      xp: 240,
-      currentStreak: 3,
-      longestStreak: 7,
+      xp: 120,
+      currentStreak: 4,
+      longestStreak: 12,
       lastActiveAt: new Date(),
     },
   });
 
-  const maths = await prisma.subject.create({
+  await prisma.mSProfile.create({
     data: {
-      name: "Mathematics",
-      slug: "maths",
-      color: "#4DA6FF",
-      icon: "calculator",
+      userId: user.id,
+      msType: "RRMS",
+      diagnosisDate: new Date("2022-03-15"),
+      currentDMT: "Ocrevus",
+      goals: JSON.stringify(["Manage fatigue better", "Prepare for neurology appointment"]),
+      onboardingDone: true,
+      consentFlags: JSON.stringify({ ai_coach: true, data_export: true }),
+    },
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    await prisma.dailyCheckIn.create({
+      data: {
+        userId: user.id,
+        date: d,
+        energy: 5 + Math.floor(Math.random() * 4),
+        mood: 5 + Math.floor(Math.random() * 3),
+        pain: 2 + Math.floor(Math.random() * 4),
+        brainFog: 3 + Math.floor(Math.random() * 4),
+        sleepHours: 6 + Math.random() * 2,
+        stress: 3 + Math.floor(Math.random() * 4),
+      },
+    });
+  }
+
+  await prisma.medication.create({
+    data: {
+      userId: user.id,
+      name: "Ocrevus",
+      type: "DMT",
+      dose: "600mg infusion",
+      schedule: "Every 6 months",
+    },
+  });
+
+  await prisma.goal.createMany({
+    data: [
+      { userId: user.id, title: "Build a sustainable daily routine" },
+      { userId: user.id, title: "Manage fatigue better" },
+    ],
+  });
+
+  const livingWithMs = await prisma.subject.create({
+    data: {
+      name: "Living with MS",
+      slug: "living-with-ms",
+      color: "#3DA9FF",
+      icon: "heart",
       sortOrder: 1,
     },
   });
 
-  const biology = await prisma.subject.create({
+  const wellness = await prisma.subject.create({
     data: {
-      name: "Biology",
-      slug: "biology",
-      color: "#66BB6A",
+      name: "Wellness & energy",
+      slug: "wellness",
+      color: "#4EE066",
       icon: "leaf",
       sortOrder: 2,
     },
   });
 
-  const algebra = await prisma.course.create({
+  const first90 = await prisma.course.create({
     data: {
-      title: "Algebra Foundations",
-      description: "Build confidence with expressions, equations, and graphs.",
-      subjectId: maths.id,
+      title: "First 90 Days After Diagnosis",
+      description:
+        "A gentle guide through the early weeks — understanding MS, building your care team, and finding your footing.",
+      subjectId: livingWithMs.id,
       sortOrder: 1,
     },
   });
 
-  const cells = await prisma.course.create({
+  const fatigue = await prisma.course.create({
     data: {
-      title: "Cell Biology",
-      description: "Explore the building blocks of life from organelles to membranes.",
-      subjectId: biology.id,
+      title: "Fatigue Management",
+      description:
+        "Practical strategies for pacing energy, planning your day, and working with — not against — MS fatigue.",
+      subjectId: wellness.id,
       sortOrder: 1,
     },
   });
 
   const nuggets = [
     {
-      courseId: algebra.id,
+      courseId: first90.id,
       sortOrder: 1,
-      title: "Understanding Variables",
-      summary: "Learn what variables represent and how to substitute values.",
+      title: "What is MS?",
+      summary: "Understand multiple sclerosis in plain language.",
       durationMin: 6,
-      content: `## What is a variable?
+      content: `## Multiple sclerosis in simple terms
 
-A **variable** is a symbol (often a letter like $x$ or $n$) that stands for a number we do not know yet—or one that can change.
+**MS** is a condition where your immune system mistakenly attacks the protective coating (myelin) around nerve fibres in your brain and spinal cord.
 
-### Why variables matter
-- They let us write general rules instead of one-off calculations.
-- Equations use variables to describe relationships (e.g. $y = 2x + 1$).
+### Key points
+- MS is **not contagious** and is not your fault.
+- It affects everyone differently — no two journeys are identical.
+- Treatments (DMTs) can reduce relapses and slow progression for many people.
+- A good **care team** (neurologist, MS nurse, physio, etc.) makes a huge difference.
 
-### Substitution
-If $x = 4$, then $3x + 2 = 3(4) + 2 = 14$.
+### What you might feel
+Fatigue, numbness, vision changes, balance issues, brain fog — but symptoms vary widely.
 
-**Tip:** Treat the variable like a placeholder. Replace it with the given value, then calculate.`,
+**Remember:** A diagnosis is the start of learning to live well with MS, not an endpoint.`,
       questions: [
         {
-          prompt: "If $a = 5$, what is $2a + 3$?",
-          options: JSON.stringify(["8", "10", "13", "25"]),
-          correctIndex: 2,
-          explanation: "Substitute: $2(5) + 3 = 10 + 3 = 13$.",
-        },
-        {
-          prompt: "Which expression means 'a number $n$ increased by 7'?",
-          options: JSON.stringify(["7n", "n - 7", "n + 7", "n ÷ 7"]),
-          correctIndex: 2,
-          explanation: "'Increased by 7' means add 7 to $n$.",
+          prompt: "MS primarily affects which part of the nervous system?",
+          options: JSON.stringify([
+            "Only the muscles directly",
+            "The brain and spinal cord",
+            "The digestive system",
+            "The heart only",
+          ]),
+          correctIndex: 1,
+          explanation: "MS involves the central nervous system — brain and spinal cord.",
         },
       ],
     },
     {
-      courseId: algebra.id,
+      courseId: first90.id,
       sortOrder: 2,
-      title: "Solving One-Step Equations",
-      summary: "Use inverse operations to find unknown values.",
+      title: "Building Your Care Team",
+      summary: "Who should be on your MS team and how to work with them.",
       durationMin: 8,
-      content: `## One-step equations
+      content: `## Your MS care team
 
-An equation states two expressions are **equal**. To solve, isolate the variable using **inverse operations**.
+You don't have to navigate this alone. A strong team might include:
 
-| Operation | Inverse |
-|-----------|---------|
-| $+5$ | $-5$ |
-| $\times 3$ | $\div 3$ |
+| Role | How they help |
+|------|---------------|
+| **Neurologist** | Diagnosis, DMTs, relapse management |
+| **MS nurse specialist** | Day-to-day questions, injections, support |
+| **GP** | General health, referrals, prescriptions |
+| **Physiotherapist** | Mobility, strength, balance |
+| **Occupational therapist** | Daily living, workplace adjustments |
+| **Psychologist / counsellor** | Emotional wellbeing |
 
-### Example
-$x + 4 = 11$ → subtract 4 from both sides → $x = 7$.
-
-Always **do the same thing to both sides** to keep the equation balanced.`,
+### Tips for appointments
+- Keep a **symptom diary** (Lumen's tracker helps!)
+- Write questions down before you go
+- Bring someone for support if you'd like
+- Ask for a written summary after visits`,
       questions: [
         {
-          prompt: "Solve: $x - 9 = 15$",
-          options: JSON.stringify(["6", "24", "-6", "135"]),
+          prompt: "Which professional typically manages DMT prescriptions?",
+          options: JSON.stringify(["Physiotherapist", "Neurologist", "Dentist", "Pharmacist only"]),
           correctIndex: 1,
-          explanation: "Add 9 to both sides: $x = 24$.",
-        },
-        {
-          prompt: "Solve: $3y = 21$",
-          options: JSON.stringify(["7", "18", "63", "24"]),
-          correctIndex: 0,
-          explanation: "Divide both sides by 3: $y = 7$.",
+          explanation: "Neurologists lead MS treatment including DMT decisions.",
         },
       ],
     },
     {
-      courseId: algebra.id,
+      courseId: first90.id,
       sortOrder: 3,
-      title: "Linear Graphs Basics",
-      summary: "Connect equations to straight-line graphs on a coordinate plane.",
-      durationMin: 10,
-      content: `## The coordinate plane
-
-Points are written $(x, y)$: horizontal first, vertical second.
-
-A **linear** equation forms a straight line. In $y = mx + c$:
-- $m$ is the **gradient** (steepness)
-- $c$ is the **y-intercept** (where the line crosses the y-axis)
-
-### Plotting tip
-Pick easy $x$ values (0, 1, 2), calculate $y$, plot points, then draw the line through them.`,
-      questions: [
-        {
-          prompt: "In $y = 2x + 1$, what is the y-intercept?",
-          options: JSON.stringify(["2", "1", "0", "x"]),
-          correctIndex: 1,
-          explanation: "When $x = 0$, $y = 1$. The constant term is the intercept.",
-        },
-      ],
-    },
-    {
-      courseId: algebra.id,
-      sortOrder: 4,
-      title: "Expanding Brackets",
-      summary: "Multiply a term outside brackets by each term inside.",
+      title: "Understanding Relapses",
+      summary: "What relapses are, when to seek help, and how to track them.",
       durationMin: 7,
-      content: `## Distributive law
+      content: `## What is a relapse?
 
-$a(b + c) = ab + ac$
+A **relapse** (also called a flare or attack) is new symptoms or worsening of old symptoms lasting **at least 24 hours**, usually after a period of stability, with no infection or fever.
 
-### Example
-$3(x + 4) = 3x + 12$
+### When to contact your team
+- New symptoms lasting more than 24–48 hours
+- Significant worsening of existing symptoms
+- Symptoms affecting daily function
 
-Watch for **negative signs** outside brackets—they change every sign inside.`,
+### Tracking helps
+Log when symptoms started, what you noticed, and whether steroids were used. This gives your neurologist valuable information.
+
+**Important:** Sudden severe symptoms (vision loss, severe weakness, bladder retention) need urgent medical attention.`,
       questions: [
         {
-          prompt: "Expand: $2(x + 5)$",
-          options: JSON.stringify(["2x + 5", "2x + 10", "x + 10", "2x + 7"]),
+          prompt: "A relapse typically lasts at least…",
+          options: JSON.stringify(["1 hour", "24 hours", "1 week minimum always", "6 months"]),
           correctIndex: 1,
-          explanation: "$2 \\times x + 2 \\times 5 = 2x + 10$.",
+          explanation: "The 24-hour rule helps distinguish relapses from temporary symptom fluctuations.",
         },
       ],
     },
     {
-      courseId: cells.id,
+      courseId: fatigue.id,
       sortOrder: 1,
-      title: "Introduction to Cells",
-      summary: "Discover why cells are the basic units of life.",
+      title: "Understanding MS Fatigue",
+      summary: "Why MS fatigue is different and why rest alone isn't enough.",
       durationMin: 6,
-      content: `## All living things are made of cells
+      content: `## MS fatigue is real — and different
 
-A **cell** is the smallest unit that can carry out life processes. Some organisms are single-celled; others have trillions.
+MS fatigue isn't just being tired. It's often:
+- **Overwhelming** — not relieved by a good night's sleep
+- **Disproportionate** — small tasks can wipe you out
+- **Unpredictable** — good days and bad days
 
-### Two main types
-- **Prokaryotic** — no nucleus (e.g. bacteria)
-- **Eukaryotic** — membrane-bound nucleus (e.g. plant & animal cells)
+### The spoon theory
+Imagine you start each day with a limited number of "spoons" (energy units). Every activity costs spoons. MS means you often have fewer spoons than others.
 
-Cells take in nutrients, grow, respond, and reproduce.`,
+### Key insight
+**Pacing** beats pushing through. Saving energy for what matters most is a skill, not laziness.`,
       questions: [
         {
-          prompt: "Which type of cell has a nucleus?",
+          prompt: "MS fatigue is best described as…",
           options: JSON.stringify([
-            "Prokaryotic only",
-            "Eukaryotic",
-            "Neither",
-            "Both always lack a nucleus",
+            "Only caused by poor sleep",
+            "Often disproportionate to activity and not always fixed by rest",
+            "The same as normal tiredness",
+            "Not a real symptom",
           ]),
           correctIndex: 1,
-          explanation: "Eukaryotic cells have a membrane-bound nucleus.",
+          explanation: "MS fatigue has unique qualities that make pacing strategies essential.",
         },
       ],
     },
     {
-      courseId: cells.id,
+      courseId: fatigue.id,
       sortOrder: 2,
-      title: "Animal Cell Organelles",
-      summary: "Meet the structures that keep animal cells alive.",
-      durationMin: 9,
-      content: `## Key organelles
-
-| Organelle | Function |
-|-----------|----------|
-| **Nucleus** | Stores DNA, controls activities |
-| **Mitochondria** | Releases energy (respiration) |
-| **Ribosomes** | Make proteins |
-| **Cell membrane** | Controls what enters and leaves |
-
-Think of organelles as specialised departments in a factory.`,
-      questions: [
-        {
-          prompt: "Which organelle is the 'powerhouse' of the cell?",
-          options: JSON.stringify([
-            "Ribosome",
-            "Mitochondria",
-            "Nucleus",
-            "Vacuole (large in plants)",
-          ]),
-          correctIndex: 1,
-          explanation: "Mitochondria carry out aerobic respiration to release ATP.",
-        },
-        {
-          prompt: "Where is DNA stored in an animal cell?",
-          options: JSON.stringify(["Ribosome", "Cytoplasm only", "Nucleus", "Cell wall"]),
-          correctIndex: 2,
-          explanation: "DNA is contained within the nucleus.",
-        },
-      ],
-    },
-    {
-      courseId: cells.id,
-      sortOrder: 3,
-      title: "Plant vs Animal Cells",
-      summary: "Compare structures found in plant and animal cells.",
+      title: "Energy Pacing Basics",
+      summary: "Learn the 50/10 rule and how to plan your day around energy.",
       durationMin: 8,
-      content: `## Shared features
-Both have nucleus, cytoplasm, cell membrane, mitochondria, ribosomes.
+      content: `## Pacing strategies that work
 
-## Plant-only structures
-- **Cell wall** — rigid support (cellulose)
-- **Chloroplasts** — photosynthesis
-- **Large vacuole** — stores cell sap, maintains shape
+### The 50/10 rule
+Work at about **50%** of what you think you can do, then **rest for 10 minutes** before continuing. This prevents the boom-bust cycle.
 
-Animal cells have **small vacuoles** or none.`,
+### Plan your day
+1. List what you need to do
+2. Rank by importance
+3. Put demanding tasks in your **best energy window** (often morning)
+4. Build in rest breaks — they're productive, not wasted time
+
+### Micro-actions
+On low-energy days, one small win counts: a 5-minute stretch, one check-in, one message to a friend.`,
       questions: [
         {
-          prompt: "Which structure is found in plant cells but NOT animal cells?",
+          prompt: "The 50/10 rule suggests working at about…",
           options: JSON.stringify([
-            "Cell membrane",
-            "Chloroplast",
-            "Nucleus",
-            "Mitochondria",
+            "100% capacity then resting all day",
+            "50% of perceived capacity with regular breaks",
+            "No activity at all",
+            "Only exercising for 50 minutes",
           ]),
           correctIndex: 1,
-          explanation: "Chloroplasts carry out photosynthesis in plant cells.",
+          explanation: "Working below your perceived limit helps avoid energy crashes later.",
         },
       ],
     },
     {
-      courseId: cells.id,
-      sortOrder: 4,
-      title: "Diffusion & Osmosis",
-      summary: "Understand how substances move across membranes.",
-      durationMin: 10,
-      content: `## Diffusion
-Particles spread from **high** to **low** concentration until balanced. No energy required.
-
-## Osmosis
-Special case of diffusion: **water** moves across a partially permeable membrane.
-
-### Practical language
-- **Isotonic** — no net water movement
-- **Hypertonic** solution — cell may shrink (water leaves)
-- **Hypotonic** solution — cell may swell`,
-      questions: [
-        {
-          prompt: "Diffusion is the movement of particles from…",
-          options: JSON.stringify([
-            "Low to high concentration",
-            "High to low concentration",
-            "Only inside the nucleus",
-            "Only with ATP",
-          ]),
-          correctIndex: 1,
-          explanation: "Particles naturally spread down a concentration gradient.",
-        },
-      ],
-    },
-    {
-      courseId: cells.id,
-      sortOrder: 5,
-      title: "Microscopy Skills",
-      summary: "Read magnifications and estimate cell sizes.",
+      courseId: fatigue.id,
+      sortOrder: 3,
+      title: "Sleep & MS Fatigue",
+      summary: "How sleep hygiene supports energy — without promising a cure.",
       durationMin: 7,
-      content: `## Magnification
+      content: `## Sleep and MS
 
-$$\\text{Magnification} = \\frac{\\text{Image size}}{\\text{Actual size}}$$
+Poor sleep can worsen fatigue, spasticity, pain, and mood. MS can also disrupt sleep directly (pain, bladder urgency, restless legs).
 
-Units must match (both µm or both mm).
+### Sleep hygiene tips
+- Consistent wake time (even on weekends)
+- Cool, dark bedroom
+- Limit screens 1 hour before bed
+- Avoid caffeine after 2pm
+- Gentle evening routine (stretching, reading)
 
-### Electron vs light microscopes
-- **Light** — up to ~×1500, living specimens
-- **Electron** — much higher resolution, dead specimens, 3D detail with SEM`,
+### When to ask for help
+If snoring, gasping, or extreme daytime sleepiness occur, ask about **sleep apnoea** screening.
+
+Track your sleep in Lumen's daily check-in to spot patterns.`,
       questions: [
         {
-          prompt: "If an image is 50 mm and the real cell is 0.05 mm, magnification is…",
-          options: JSON.stringify(["×10", "×100", "×1000", "×0.001"]),
+          prompt: "Good sleep hygiene includes…",
+          options: JSON.stringify([
+            "Irregular bedtimes each night",
+            "Caffeine before bed",
+            "A consistent wake time",
+            "Screens in bed for an hour",
+          ]),
           correctIndex: 2,
-          explanation: "$50 \\div 0.05 = 1000$.",
+          explanation: "Consistent wake times help regulate your body clock.",
         },
       ],
     },
@@ -343,6 +338,32 @@ Units must match (both µm or both mm).
       },
     });
   }
+
+  await prisma.coach.createMany({
+    data: [
+      {
+        name: "Dr. Sarah Chen",
+        title: "MS Specialist Nurse",
+        bio: "15 years supporting people with MS through diagnosis, treatment, and daily life.",
+        specialties: JSON.stringify(["Newly diagnosed", "DMT support", "Relapse management"]),
+        calComUrl: "https://cal.com",
+      },
+      {
+        name: "James Okonkwo",
+        title: "Neuro Physiotherapist",
+        bio: "Helps people with MS stay mobile, build strength, and manage spasticity.",
+        specialties: JSON.stringify(["Mobility", "Exercise pacing", "Balance"]),
+        calComUrl: "https://cal.com",
+      },
+      {
+        name: "Emma Walsh",
+        title: "MS Psychologist",
+        bio: "Supports emotional wellbeing, anxiety, and adjustment to life with MS.",
+        specialties: JSON.stringify(["Mental health", "Workplace", "Relationships"]),
+        calComUrl: "https://cal.com",
+      },
+    ],
+  });
 
   console.log("Seed complete. Demo login: alex@lumenlearn.app / learn123");
 }

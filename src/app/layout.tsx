@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lumen — Learn brighter",
+  title: "Lumen — Navigate MS with clarity",
   description:
-    "Lumen is an adaptive AI learning platform. Bite-sized lessons, instant feedback, and a path that adapts to you.",
+    "Lumen is a hybrid MS coaching platform: AI coach, symptom tracker, MS education programs, and human coach sessions.",
 };
 
 export default function RootLayout({

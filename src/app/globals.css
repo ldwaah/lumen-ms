@@ -192,3 +192,14 @@ body {
   background: rgba(255, 255, 255, 0.04);
   font-weight: 600;
 }
+
+/* Accessibility: high contrast mode */
+.high-contrast {
+  --color-fg: #ffffff;
+  --color-fg-muted: #e0e4f0;
+  --color-border: rgba(255, 255, 255, 0.25);
+  --color-border-strong: rgba(255, 255, 255, 0.4);
+}
+.high-contrast .glass {
+  border-color: rgba(255, 255, 255, 0.3);
+}
