@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { COACH_QUICK_PROMPTS } from "@/lib/ms-types";
 import { clearChatHistory } from "@/app/actions/ms";
+import { captureEvent } from "@/lib/analytics";
 import { Send, Trash2 } from "lucide-react";
 
 interface Message {
@@ -45,6 +46,7 @@ export function CoachChat({ initialMessages, threadId: initialThreadId }: Props)
     setInput("");
     setLoading(true);
     setStreaming(false);
+    captureEvent("coach_message_sent");
 
     try {
       const res = await fetch("/api/coach/message", {

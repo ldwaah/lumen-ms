@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarkdownContent } from "@/components/markdown-content";
+import { captureEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 type Question = {
@@ -23,6 +24,7 @@ type Props = {
   durationMin: number;
   questions: Question[];
   previousScore?: number | null;
+  programTitle?: string;
 };
 
 export function NuggetPlayer({
@@ -32,6 +34,7 @@ export function NuggetPlayer({
   durationMin,
   questions,
   previousScore,
+  programTitle,
 }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<"learn" | "quiz" | "done">("learn");
@@ -47,6 +50,13 @@ export function NuggetPlayer({
   } | null>(null);
 
   const current = questions[qIndex];
+
+  useEffect(() => {
+    captureEvent("program_step_started", {
+      step_title: title,
+      program_title: programTitle ?? null,
+    });
+  }, [nuggetId, title, programTitle]);
 
   function handleCheck() {
     if (selected === null || !current) return;
@@ -70,6 +80,10 @@ export function NuggetPlayer({
         score: scorePct,
         xp: data.xp ?? 0,
         streak: data.currentStreak ?? 1,
+      });
+      captureEvent("program_step_completed", {
+        step_title: title,
+        program_title: programTitle ?? null,
       });
       setPhase("done");
     } finally {

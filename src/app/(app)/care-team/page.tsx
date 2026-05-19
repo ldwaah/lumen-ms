@@ -3,6 +3,7 @@ import { getCareTeamMembers } from "@/lib/ms-data";
 import { addCareTeamMember } from "@/app/actions/ms";
 import { Button } from "@/components/ui/button";
 import { SafetyFooter } from "@/components/layout/safety-footer";
+import { PdfDownloadLink } from "@/components/care-team/pdf-download-link";
 import { Download, Users } from "lucide-react";
 
 export default async function CareTeamPage() {
@@ -28,12 +29,7 @@ export default async function CareTeamPage() {
             </p>
           </div>
         </div>
-        <a
-          href="/api/export/summary.pdf"
-          className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full bg-[var(--color-primary)] text-base font-semibold text-[#0a1024] sm:w-auto sm:px-8"
-        >
-          Download PDF
-        </a>
+        <PdfDownloadLink />
       </section>
 
       <section className="glass rounded-3xl p-6">
