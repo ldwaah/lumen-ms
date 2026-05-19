@@ -19,10 +19,12 @@ interface Props {
   threadId: string;
 }
 
-export function CoachChat({ initialMessages, threadId }: Props) {
+export function CoachChat({ initialMessages, threadId: initialThreadId }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const threadIdRef = useRef<string>(initialThreadId);
   const bottomRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -31,46 +33,124 @@ export function CoachChat({ initialMessages, threadId }: Props) {
   }, [messages]);
 
   async function sendMessage(text: string) {
-    if (!text.trim() || loading) return;
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
 
     const userMsg: Message = {
       id: `temp-${Date.now()}`,
       role: "user",
-      content: text.trim(),
+      content: trimmed,
     };
     setMessages((m) => [...m, userMsg]);
     setInput("");
     setLoading(true);
+    setStreaming(false);
 
     try {
       const res = await fetch("/api/coach/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text.trim(), threadId }),
+        body: JSON.stringify({ message: trimmed, threadId: threadIdRef.current }),
       });
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(`Request failed: ${res.status}`);
+      }
 
-      if (data.safetyFlag) {
+      const headerThreadId = res.headers.get("X-Thread-Id");
+      if (headerThreadId) {
+        threadIdRef.current = headerThreadId;
+      }
+
+      const contentType = res.headers.get("Content-Type") ?? "";
+
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.threadId) {
+          threadIdRef.current = data.threadId;
+        }
+        if (data.safetyFlag) {
+          setMessages((m) => [
+            ...m,
+            {
+              id: `safety-${Date.now()}`,
+              role: "assistant",
+              content: data.content,
+              safetyFlag: data.safetyFlag,
+            },
+          ]);
+        } else if (data.content) {
+          setMessages((m) => [
+            ...m,
+            {
+              id: `assistant-${Date.now()}`,
+              role: "assistant",
+              content: data.content,
+            },
+          ]);
+        }
+        setLoading(false);
+        router.refresh();
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const decoder = new TextDecoder();
+      const assistantId = `assistant-${Date.now()}`;
+      let accumulated = "";
+      let firstChunk = true;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+        accumulated += chunk;
+
+        if (firstChunk) {
+          firstChunk = false;
+          setLoading(false);
+          setStreaming(true);
+          setMessages((m) => [
+            ...m,
+            { id: assistantId, role: "assistant", content: accumulated },
+          ]);
+        } else {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === assistantId ? { ...msg, content: accumulated } : msg,
+            ),
+          );
+        }
+      }
+
+      const tail = decoder.decode();
+      if (tail) {
+        accumulated += tail;
+        setMessages((m) =>
+          m.map((msg) =>
+            msg.id === assistantId ? { ...msg, content: accumulated } : msg,
+          ),
+        );
+      }
+
+      if (firstChunk) {
         setMessages((m) => [
           ...m,
           {
-            id: `safety-${Date.now()}`,
+            id: assistantId,
             role: "assistant",
-            content: data.content,
-            safetyFlag: data.safetyFlag,
-          },
-        ]);
-      } else if (data.content) {
-        setMessages((m) => [
-          ...m,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: data.content,
+            content: accumulated || "(no response)",
           },
         ]);
       }
+
+      setStreaming(false);
+      setLoading(false);
       router.refresh();
     } catch {
       setMessages((m) => [
@@ -82,10 +162,13 @@ export function CoachChat({ initialMessages, threadId }: Props) {
             "Sorry, I couldn't respond right now. Please try again in a moment.",
         },
       ]);
-    } finally {
+      setStreaming(false);
       setLoading(false);
     }
   }
+
+  const showThinking = loading && !streaming;
+  const inputDisabled = loading || streaming;
 
   return (
     <div className="flex h-[calc(100vh-12rem)] flex-col md:h-[calc(100vh-8rem)]">
@@ -125,7 +208,7 @@ export function CoachChat({ initialMessages, threadId }: Props) {
             </div>
           </div>
         ))}
-        {loading && (
+        {showThinking && (
           <p className="text-sm text-[var(--color-fg-muted)]">Thinking…</p>
         )}
         <div ref={bottomRef} />
@@ -143,9 +226,9 @@ export function CoachChat({ initialMessages, threadId }: Props) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask your coach…"
           className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40"
-          disabled={loading}
+          disabled={inputDisabled}
         />
-        <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+        <Button type="submit" size="icon" disabled={inputDisabled || !input.trim()}>
           <Send className="h-4 w-4" />
         </Button>
         <Button
