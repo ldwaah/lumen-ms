@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lumen — Learn brighter
 
-## Getting Started
+An adaptive learning platform inspired by modern micro-learning UX: bite-sized **nuggets**, instant quiz feedback, streaks, XP, and progress analytics.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS v4**
+- **Prisma 6** + **SQLite** (local dev; swap `DATABASE_URL` for Postgres in production)
+- **NextAuth (Auth.js v5)** — email/password credentials
+- **Framer Motion** — lesson & quiz transitions
+- **Recharts** — learning activity chart
+
+## Quick start
 
 ```bash
+cd ~/Projects/lumen
+npm install
+npm run db:setup    # prisma db push + seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo account
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Email:** `alex@lumenlearn.app`
+- **Password:** `learn123`
 
-## Learn More
+Or create a new account via **Sign up**.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run db:setup` | Migrate DB + seed content |
+| `npm run db:seed` | Re-seed only |
+| `npm run typecheck` | TypeScript check |
+| `npm run lint` | ESLint |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> **pnpm:** If you prefer pnpm, run `pnpm install` then `pnpm dev` — scripts are identical.
 
-## Deploy on Vercel
+## What's included
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Auth** — login & signup (Century-inspired cream card on dark pattern)
+- **My Path** (`/learn`) — greeting, continue learning, recommendations, streak/XP
+- **Courses** (`/courses`) — Maths & Biology → courses → nuggets (9 seed nuggets)
+- **Nugget player** — content + multiple-choice quiz with instant feedback
+- **Progress** (`/progress`) — activity chart, subject mastery, active-day calendar
+- **Profile** — account summary & sign out
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment
+
+Copy `.env.example` to `.env` and set:
+
+- `DATABASE_URL` — default `file:./dev.db`
+- `AUTH_SECRET` — random string for session signing
+- `NEXTAUTH_URL` — `http://localhost:3000` in dev
+
+## License
+
+MIT — original content & branding only; not affiliated with CENTURY Tech.

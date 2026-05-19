@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String
+  email         String           @unique
+  passwordHash  String
+  xp            Int              @default(0)
+  currentStreak Int              @default(0)
+  longestStreak Int              @default(0)
+  lastActiveAt  DateTime?
+  mood          String           @default("neutral")
+  createdAt     DateTime         @default(now())
+  progress      NuggetProgress[]
+  activities    ActivityLog[]
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  color     String
+  icon      String
+  sortOrder Int      @default(0)
+  courses   Course[]
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  sortOrder   Int      @default(0)
+  nuggets     Nugget[]
+}
+
+model Nugget {
+  id          String           @id @default(cuid())
+  title       String
+  summary     String
+  content     String
+  durationMin Int              @default(8)
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sortOrder   Int              @default(0)
+  questions   Question[]
+  progress    NuggetProgress[]
+}
+
+model Question {
+  id             String @id @default(cuid())
+  nuggetId       String
+  nugget         Nugget @relation(fields: [nuggetId], references: [id], onDelete: Cascade)
+  prompt         String
+  options        String
+  correctIndex   Int
+  explanation    String
+  sortOrder      Int    @default(0)
+}
+
+model NuggetProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  nuggetId    String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nugget      Nugget    @relation(fields: [nuggetId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
+  score       Int?
+  xpEarned    Int       @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, nuggetId])
+}
+
+model ActivityLog {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime
+  nuggetsCompleted Int     @default(0)
+  minutesStudied  Int      @default(0)
+  xpEarned        Int      @default(0)
+
+  @@unique([userId, date])
+}
