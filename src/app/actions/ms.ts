@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { startOfDay } from "date-fns";
 import { revalidatePath } from "next/cache";
@@ -221,4 +221,25 @@ export async function clearChatHistory() {
 
   await prisma.chatThread.deleteMany({ where: { userId: session.user.id } });
   revalidatePath("/coach");
+}
+
+export async function deleteMyAccount() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const userId = session.user.id;
+
+  // GDPR audit: record the deletion request before the cascade removes it.
+  // The schema cascades ConsentRecord on User delete, so this row is wiped
+  // alongside the user. Accepting that loss for simplicity (option a).
+  // TODO: when an immutable audit table exists, mirror this event there so
+  // the deletion is provably logged after the user is gone (option b).
+  await prisma.consentRecord.create({
+    data: { userId, feature: "account_deletion", granted: true },
+  });
+
+  // Prisma cascade handles every child row (onDelete: Cascade on all relations).
+  await prisma.user.delete({ where: { id: userId } });
+
+  await signOut({ redirectTo: "/login" });
 }
