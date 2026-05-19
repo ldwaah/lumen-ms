@@ -38,6 +38,7 @@ export default async function ProgramStepPage({
         durationMin={nugget.durationMin}
         questions={questions}
         previousScore={nugget.progress[0]?.score ?? null}
+        programTitle={nugget.course.title}
       />
     </div>
   );

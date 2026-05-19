@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { saveDailyCheckIn } from "@/app/actions/ms";
 import { Button } from "@/components/ui/button";
+import { captureEvent } from "@/lib/analytics";
 
 interface Props {
   existing?: {
@@ -46,8 +47,17 @@ function Slider({
 }
 
 export function CheckInForm({ existing }: Props) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleAction(formData: FormData) {
+    startTransition(async () => {
+      await saveDailyCheckIn(formData);
+      captureEvent("check_in_saved");
+    });
+  }
+
   return (
-    <form action={saveDailyCheckIn} className="space-y-4">
+    <form action={handleAction} className="space-y-4">
       <Slider name="energy" label="Energy" defaultValue={existing?.energy ?? 5} />
       <Slider name="mood" label="Mood" defaultValue={existing?.mood ?? 5} />
       <Slider name="pain" label="Pain" defaultValue={existing?.pain ?? 3} />
@@ -79,7 +89,7 @@ export function CheckInForm({ existing }: Props) {
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40"
         />
       </div>
-      <Button type="submit" className="w-full">
+      <Button type="submit" className="w-full" disabled={isPending}>
         {existing ? "Update check-in" : "Save check-in"}
       </Button>
     </form>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { buildCoachContext } from "@/lib/ms-data";
 import { COACH_SYSTEM_PROMPT } from "@/lib/coach-prompt";
 import { checkMessageSafety } from "@/lib/safety";
+import { captureServerEvent } from "@/lib/analytics-server";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
@@ -91,6 +92,10 @@ export async function POST(req: Request) {
           safetyFlag: safety.type,
         },
       ],
+    });
+
+    await captureServerEvent(userId, "coach_safety_triggered", {
+      safety_type: safety.type,
     });
 
     return NextResponse.json({
