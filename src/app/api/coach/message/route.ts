@@ -4,8 +4,10 @@ import { buildCoachContext } from "@/lib/ms-data";
 import { COACH_SYSTEM_PROMPT } from "@/lib/coach-prompt";
 import { checkMessageSafety } from "@/lib/safety";
 import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { streamText } from "ai";
 import { NextResponse } from "next/server";
+
+export const maxDuration = 30;
 
 const MOCK_RESPONSES: Record<string, string> = {
   default:
@@ -22,6 +24,37 @@ function getMockResponse(message: string): string {
   if (lower.includes("neurolog") || lower.includes("appointment"))
     return MOCK_RESPONSES.neurologist;
   return MOCK_RESPONSES.default;
+}
+
+function buildMockStream(
+  fullText: string,
+  threadId: string,
+  persist: (content: string) => Promise<void>,
+): Response {
+  const encoder = new TextEncoder();
+  const tokens = fullText.match(/\S+\s*/g) ?? [fullText];
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for (const token of tokens) {
+          controller.enqueue(encoder.encode(token));
+          await new Promise((resolve) => setTimeout(resolve, 35));
+        }
+      } finally {
+        await persist(fullText);
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Thread-Id": threadId,
+    },
+  });
 }
 
 export async function POST(req: Request) {
@@ -79,6 +112,21 @@ export async function POST(req: Request) {
     data: { threadId: thread.id, role: "user", content: message },
   });
 
+  const threadIdForCallback = thread.id;
+  const persistAssistant = async (content: string) => {
+    try {
+      await prisma.chatMessage.create({
+        data: { threadId: threadIdForCallback, role: "assistant", content },
+      });
+    } catch (err) {
+      console.error("Failed to persist assistant message", err);
+    }
+  };
+
+  if (!process.env.OPENAI_API_KEY) {
+    return buildMockStream(getMockResponse(message), thread.id, persistAssistant);
+  }
+
   const context = await buildCoachContext(userId);
   const recentMessages = await prisma.chatMessage.findMany({
     where: { threadId: thread.id },
@@ -86,30 +134,22 @@ export async function POST(req: Request) {
     take: 6,
   });
 
-  let assistantContent: string;
-
-  if (process.env.OPENAI_API_KEY) {
-    const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
-      system: `${COACH_SYSTEM_PROMPT}\n\nUser context:\n${context}`,
-      messages: recentMessages
-        .reverse()
-        .map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        })),
-    });
-    assistantContent = text;
-  } else {
-    assistantContent = getMockResponse(message);
-  }
-
-  await prisma.chatMessage.create({
-    data: { threadId: thread.id, role: "assistant", content: assistantContent },
+  const result = streamText({
+    model: openai("gpt-4o-mini"),
+    system: `${COACH_SYSTEM_PROMPT}\n\nUser context:\n${context}`,
+    messages: recentMessages.reverse().map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    })),
+    onFinish: async ({ text }) => {
+      await persistAssistant(text);
+    },
   });
 
-  return NextResponse.json({
-    content: assistantContent,
-    threadId: thread.id,
+  return result.toTextStreamResponse({
+    headers: {
+      "X-Thread-Id": thread.id,
+      "Cache-Control": "no-cache, no-transform",
+    },
   });
 }
