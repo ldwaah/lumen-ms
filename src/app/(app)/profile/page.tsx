@@ -6,6 +6,7 @@ import { updateMSProfile } from "@/app/actions/ms";
 import { Button } from "@/components/ui/button";
 import { MS_TYPES } from "@/lib/ms-types";
 import { SafetyFooter } from "@/components/layout/safety-footer";
+import { DataRightsSection } from "@/components/profile/data-rights-section";
 import { User, Mail, Flame, LogOut } from "lucide-react";
 
 export default async function ProfilePage() {
@@ -105,6 +106,8 @@ export default async function ProfilePage() {
           </Button>
         </form>
       </section>
+
+      <DataRightsSection />
 
       <form
         action={async () => {
