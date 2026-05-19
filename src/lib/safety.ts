@@ -18,10 +18,15 @@ const EMERGENCY_PATTERNS = [
   /\b(seizure|convulsion)\b/i,
 ];
 
+const DMT_NAMES =
+  "ocrevus|ocrelizumab|kesimpta|ofatumumab|tysabri|natalizumab|aubagio|teriflunomide|tecfidera|vumerity|dimethyl fumarate|copaxone|glatiramer|rituxan|rituximab|lemtrada|alemtuzumab|mavenclad|cladribine|gilenya|fingolimod|mayzent|siponimod|zeposia|ozanimod|ponvory|ponesimod|briumvi|ublituximab|avonex|rebif|betaseron|plegridy|interferon";
+
 const MEDICATION_PATTERNS = [
   /\b(should i (stop|start|change|switch)|increase|decrease).*(medication|dmt|drug|dose)\b/i,
   /\b(stop taking|skip my|missed.*dose)\b/i,
-  /\b(alternative to|replace).*(ocrevus|kesimpta|tysabri|aubagio|tecfidera|copaxone)\b/i,
+  new RegExp(`\\b(alternative to|replace).*(${DMT_NAMES})\\b`, "i"),
+  new RegExp(`\\b(stop|start|change|switch|pause|skip|quit).{0,20}(${DMT_NAMES})\\b`, "i"),
+  new RegExp(`\\b(${DMT_NAMES}).{0,20}(stop|start|change|switch|pause|skip|quit)\\b`, "i"),
 ];
 
 export const CRISIS_RESOURCES = `If you are in crisis, please reach out now:
