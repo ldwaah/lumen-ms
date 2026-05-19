@@ -12,11 +12,11 @@ export const maxDuration = 30;
 
 const MOCK_RESPONSES: Record<string, string> = {
   default:
-    "Thank you for sharing. Based on what you've told me, I'd suggest focusing on one small, achievable step today. Remember — pacing your energy is one of the most powerful tools you have with MS. Would you like to explore fatigue strategies or prepare for an appointment?",
+    "Pick one small thing to do today and let the rest wait. Pacing beats pushing every time. Want to talk fatigue or appointment prep?",
   fatigue:
-    "MS fatigue responds well to pacing. Try the 50/10 rule: work at about half your perceived capacity, then rest for 10 minutes. On low-energy days, one micro-action — a short walk, a check-in, or a gentle stretch — still counts as progress.",
+    "Try the 50/10 rule: work at about half your usual pace for fifty minutes, then rest ten. On rough days, one tiny move still counts.",
   neurologist:
-    "Great idea to prepare questions. Consider asking: Are my current symptoms consistent with my MS type? Should we review my DMT? What should I do if symptoms worsen? Would any tests help right now? I can help you refine this list.",
+    "Bring three questions: how your current symptoms fit your MS pattern, whether your DMT still feels right, and what counts as urgent. I can help you sharpen them.",
 };
 
 function getMockResponse(message: string): string {
@@ -146,6 +146,8 @@ export async function POST(req: Request) {
       role: m.role as "user" | "assistant",
       content: m.content,
     })),
+    maxOutputTokens: 220,
+    temperature: 0.5,
     onFinish: async ({ text }) => {
       await persistAssistant(text);
     },

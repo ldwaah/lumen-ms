@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { COACH_QUICK_PROMPTS } from "@/lib/ms-types";
+import { stripMarkdown } from "@/lib/utils";
 import { clearChatHistory } from "@/app/actions/ms";
 import { captureEvent } from "@/lib/analytics";
 import { Send, Trash2 } from "lucide-react";
@@ -206,7 +207,11 @@ export function CoachChat({ initialMessages, threadId: initialThreadId }: Props)
                     : "bg-white/10 text-white"
               }`}
             >
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              <p className="whitespace-pre-wrap">
+                {msg.role === "assistant" && !msg.safetyFlag
+                  ? stripMarkdown(msg.content)
+                  : msg.content}
+              </p>
             </div>
           </div>
         ))}
